@@ -1,0 +1,28 @@
+-- Sharing metadata. Read by tooling and the manager detail pane; never by
+-- the loader's merge.
+return {
+  summary = "Add Pokegear strip cards and append onto CLOCK/MAP/PHONE/RADIO. Dont replace vanilla.",
+  author = "Kanto Reforged / gen1recomp community",
+  tags = { "ui", "tool", "library", "gen2", "pokegear" },
+  differences = {
+    changed = {},
+    added = {
+      "mod.exports.register for custom Pokegear strip cards",
+      "mod.exports.append for additive CLOCK/MAP/PHONE/RADIO entries",
+      "state / when helpers; open + trigger hooks on custom cards",
+    },
+    known = {
+      "Patches src.ui.gen2.Pokegear (engine_internals); not a Runtime hook yet",
+      "Append-only: vanilla cards are never replaced or suppressed",
+      "Phone appends fork updatePhone (native input loop bypassed while extras visible)",
+      "Map/clock/radio overlays are scissored to the 20x14 interior below the strip",
+      "Strip holds at most ten 2-tile icons (iconX 0..18); extras are skipped",
+      "Gen 2 only — Gen 1 boots skip this mod",
+    },
+  },
+  credits = {
+    { who = "pret/pokegold", for_ = "Pokegear card strip layout and chrome tiles" },
+    { who = "Kanto-Reforged DexNav", for_ = "the first consumer shape this API generalizes" },
+  },
+  compat = { engine = ">=0.0.0-dev <2.0.0", modApi = 2 },
+}
