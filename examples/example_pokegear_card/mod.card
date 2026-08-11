@@ -1,0 +1,23 @@
+-- Sharing metadata. Read by tooling / manager detail; not by the loader merge.
+return {
+  summary = "Demo of pokegear_cards: custom strip card + phone/clock appends.",
+  author = "Pokemon Gen 1 Recompilation Project",
+  tags = { "ui", "tool", "example", "gen2", "pokegear" },
+  differences = {
+    changed = {},
+    added = {
+      "DEMO strip card on the Pokegear",
+      "NOTES row on the PHONE card",
+      "DEMO line on the CLOCK card",
+    },
+    known = {
+      "Gen 2 only; needs pokegear_cards enabled",
+      "Phone NOTES row forks native phone input while visible (see pokegear_cards README)",
+    },
+  },
+  credits = {
+    { who = "pokegear_cards", for_ = "the append-only Pokegear export this demo calls" },
+    { who = "Kanto-Reforged DexNav", for_ = "the first real consumer shape" },
+  },
+  compat = { engine = ">=0.0.0-0 <2.0.0", modApi = 2 },
+}

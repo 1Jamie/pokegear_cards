@@ -1,0 +1,17 @@
+{
+  "id": "example_pokegear_card",
+  "name": "Pokegear Card Example",
+  "version": "1.0.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "TOOL",
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "priority": 100,
+  "games": ["gen2"],
+  "dependencies": ["pokegear_cards"],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "affects_link": false,
+  "description": "Demo consumer of pokegear_cards: a DEMO strip card, a phone row, and a clock overlay."
+}
