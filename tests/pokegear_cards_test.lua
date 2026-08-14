@@ -17,6 +17,9 @@ T.check(type(api.append) == "function", "append exported")
 T.check(type(api.state) == "function", "state exported")
 T.check(type(api.when) == "table", "when exported")
 T.check(api._installed(), "Pokegear patch installed at boot")
+T.eq(api.version, "1.1.2", "manifest version is published on exports")
+T.eq(package.loaded["mods.pokegear_cards.cards"], nil,
+  "cards.lua is load(mod:read), not require into package.loaded")
 
 local Pokegear = require("src.ui.gen2.Pokegear")
 T.check(Pokegear._pokegearCards == true, "class flag set")
@@ -281,6 +284,104 @@ G.getScissor = savedGet
 api.unappend("scissor_dot")
 
 T.check(api.PHONE_INPUT_FORKED == true, "PHONE_INPUT_FORKED documents the fork")
+
+-- ------- bidirectional card navigation across vanilla + custom strip cards
+local navUnreg = api.register({
+  id = "nav_demo",
+  label = "NAV",
+  draw = function() end,
+})
+
+local navGear = setmetatable({
+  fly = false,
+  save = { pokegearFlags = { map = true, phone = true, radio = true } },
+  mode = "strip",
+  cardIndex = 1,
+}, Pokegear)
+function navGear:stopRadio() self.radioStopped = (self.radioStopped or 0) + 1 end
+function navGear:ensureTuned() self.radioTuned = true end
+function navGear:tuneRadio() self.radioTuned = true end
+function navGear:tickRadio() end
+function navGear:updatePhone() end
+function navGear:moveMapCursor() end
+function navGear:stations() return { 1, 2, 3, 4 } end
+
+local navInput = {
+  pressed = {},
+  wasPressed = function(self, k) return self.pressed[k] == true end,
+}
+navGear.game = { input = navInput }
+
+local function pressNav(k)
+  navInput.pressed = { [k] = true }
+  navGear:update(0)
+  navInput.pressed = {}
+end
+
+-- Start on Clock (1)
+T.eq(navGear.cardIndex, 1, "nav test starts on card 1 (clock)")
+T.eq(navGear.mode, "strip", "starts in strip mode")
+
+-- Right: Clock -> Map (2)
+pressNav("right")
+T.eq(navGear.cardIndex, 2, "clock right -> map (2)")
+T.eq(navGear.mode, "strip", "map in strip mode")
+
+-- Right: Map -> Phone (3)
+pressNav("right")
+T.eq(navGear.cardIndex, 3, "map right -> phone (3)")
+T.eq(navGear.mode, "card", "phone starts in card mode")
+
+-- Right: Phone -> Radio (4)
+pressNav("right")
+T.eq(navGear.cardIndex, 4, "phone right -> radio (4)")
+T.eq(navGear.mode, "card", "radio in card mode")
+T.check(navGear.radioTuned, "radio tuned on arrival")
+
+-- Right: Radio -> nav_demo (5) (resolves the dead-end)
+pressNav("right")
+T.eq(navGear.cardIndex, 5, "radio right -> custom card (5)")
+T.eq(navGear.mode, "strip", "custom card starts in strip mode")
+T.check((navGear.radioStopped or 0) >= 1, "radio stopped when moving away")
+
+-- Right: nav_demo -> wrap to Clock (1)
+pressNav("right")
+T.eq(navGear.cardIndex, 1, "custom card right -> wraps to clock (1)")
+T.eq(navGear.mode, "strip", "clock in strip mode")
+
+-- Left: Clock -> wrap to nav_demo (5)
+pressNav("left")
+T.eq(navGear.cardIndex, 5, "clock left -> wraps to custom card (5)")
+T.eq(navGear.mode, "strip", "custom card in strip mode")
+
+-- Left: nav_demo -> Radio (4)
+pressNav("left")
+T.eq(navGear.cardIndex, 4, "custom card left -> radio (4)")
+T.eq(navGear.mode, "card", "radio in card mode")
+
+-- Left: Radio -> Phone (3)
+pressNav("left")
+T.eq(navGear.cardIndex, 3, "radio left -> phone (3)")
+T.eq(navGear.mode, "card", "phone in card mode")
+
+-- Left: Phone -> Map (2)
+pressNav("left")
+T.eq(navGear.cardIndex, 2, "phone left -> map (2)")
+T.eq(navGear.mode, "strip", "map in strip mode")
+
+-- Left: Map -> Clock (1)
+pressNav("left")
+T.eq(navGear.cardIndex, 1, "map left -> clock (1)")
+T.eq(navGear.mode, "strip", "clock in strip mode")
+
+-- Open / close custom card
+pressNav("left") -- back to custom card (5)
+pressNav("a")
+T.eq(navGear.mode, "card", "A opens custom card into card mode")
+pressNav("b")
+T.eq(navGear.mode, "strip", "B exits custom card to strip mode")
+
+navUnreg()
 
 run.release()
 T.finish("pokegear_cards")

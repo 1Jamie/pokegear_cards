@@ -39,6 +39,20 @@ Clone or copy this repo to `mods/pokegear_cards`.
 "optional_dependencies": ["pokegear_cards"]
 ```
 
+Dual-gen mods that only need this library on Gold should use a scoped object
+(the engine ignores it on Red and requires it on Gold):
+
+```json
+"dependencies": [
+  {
+    "id": "pokegear_cards",
+    "games": ["gen2"],
+    "range": "^1.0.0",
+    "github": "1Jamie/pokegear_cards"
+  }
+]
+```
+
 ```lua
 local handle = mod.find("pokegear_cards")
 local api = handle and handle.exports

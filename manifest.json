@@ -1,12 +1,12 @@
 {
   "id": "pokegear_cards",
   "name": "Pokegear Cards",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
   "category": "TOOL",
-  "game_version": ">=0.0.0-dev <2.0.0",
+  "game_version": ">=0.1.84 <1.0.0",
   "priority": 10,
   "games": ["gen2"],
   "permissions": ["engine_internals"],
@@ -14,5 +14,6 @@
   "optional_dependencies": [],
   "conflicts": [],
   "affects_link": false,
+  "github": "1Jamie/pokegear_cards",
   "description": "Library: register custom Gen 2 Pokegear strip cards via mod.exports for other mods to depend on."
 }

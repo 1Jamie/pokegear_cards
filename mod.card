@@ -5,7 +5,9 @@ return {
   author = "Kanto Reforged / gen1recomp community",
   tags = { "ui", "tool", "library", "gen2", "pokegear" },
   differences = {
-    changed = {},
+    changed = {
+      "Manifest github 1Jamie/pokegear_cards; sibling Lua via load(mod:read)",
+    },
     added = {
       "mod.exports.register for custom Pokegear strip cards",
       "mod.exports.append for additive CLOCK/MAP/PHONE/RADIO entries",

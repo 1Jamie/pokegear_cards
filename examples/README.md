@@ -34,7 +34,9 @@ F10), boot Gold, open the POKéGEAR.
 1. Copy `example_pokegear_card` to `mods/<your_id>/`
 2. Edit `manifest.json` (`id`, `name`, `description`)
 3. Edit `main.lua`: change the card/append ids and replace the DEMO UI
-4. Keep `"dependencies": ["pokegear_cards"]` (or optional + degrade on Red)
+4. Keep a `pokegear_cards` dependency. Gold-only can stay a string; dual-gen
+   mods should use the scoped object (`games: ["gen2"]`, `range`, `github`)
+   so Red does not require this library.
 5. Talk only to `mod.find("pokegear_cards").exports` — never `require` Pokegear
 
 ```sh

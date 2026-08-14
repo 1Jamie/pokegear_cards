@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.2] — 2026-08-14
+
+### Changed
+
+- Manifest: `github` (`1Jamie/pokegear_cards`) so the launcher can resolve
+  updates / missing-dep download; version caught up to the 1.1.x API.
+- Sibling `cards.lua` loads with `load(mod:read(...))` so it inherits Grandma's
+  Kitchen (`src/mods/Sandbox.lua`) instead of compiling against the real `_G`
+  via `require("mods.pokegear_cards.cards")`.
+- Example consumer declares the structured Gen 2-scoped dependency
+  `{ "id": "pokegear_cards", "games": ["gen2"], "range": "^1.0.0", "github": "..." }`.
+
 ## [1.1.1] — 2026-08-11
 
 ### Fixed

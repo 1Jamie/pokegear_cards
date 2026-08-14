@@ -1,5 +1,5 @@
--- Standalone:
---   luajit mods/examples/example_pokegear_card/tests/example_pokegear_card_test.lua
+-- Standalone (from the gen1recomp tree):
+--   luajit mods/pokegear_cards/examples/example_pokegear_card/tests/example_pokegear_card_test.lua
 package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local T = require("tests.modkit")
@@ -9,7 +9,7 @@ GameVersion.set("gold")
 
 local run = T.sdk.loadMods({
   "mods/pokegear_cards",
-  "mods/examples/example_pokegear_card",
+  "mods/pokegear_cards/examples/example_pokegear_card",
 }, { generation = 2 })
 
 T.eq(#run.errors, 0, "loads clean (" .. tostring(run.errors[1]) .. ")")

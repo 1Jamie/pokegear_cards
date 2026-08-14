@@ -310,53 +310,174 @@ local function install()
     end
   end
 
+  local function stepCard(gear, delta)
+    local n = gear.cards and #gear.cards or 0
+    if n <= 1 then return end
+    local cur = gear.cardIndex or 1
+    local nextIndex = cur + delta
+    if nextIndex > n then nextIndex = 1
+    elseif nextIndex < 1 then nextIndex = n end
+
+    local oldCard = gear.cards[cur]
+    local oldId = oldCard and oldCard.id
+    if oldId == "radio" then
+      gear:stopRadio()
+    end
+    gear.call = nil
+    gear.phoneSubmenu = nil
+
+    gear.cardIndex = nextIndex
+    local newCard = gear.cards[nextIndex]
+    local newId = newCard and newCard.id
+    if newId == "radio" then
+      gear:ensureTuned()
+      gear.mode = "card"
+    elseif newId == "phone" then
+      gear.mode = "card"
+    else
+      gear.mode = "strip"
+    end
+  end
+
   local origUpdate = Pokegear.update
   function Pokegear:update(dt)
     if self.fly then return origUpdate(self, dt) end
+    local input = self.game and self.game.input
+    if not input then return end
+
     local prior = self.cards and self.cards[self.cardIndex or 1]
     local priorId = prior and prior.id
     local priorWasCustom = priorId ~= nil and not Cards.VANILLA_HOSTS[priorId]
     refreshCards(self)
-    local entry = customFor(self)
-    if entry and self.mode == "card" then
+
+    local card = self:card()
+    local cardId = card and card.id
+    local custom = cardId and customById[cardId]
+    local isCustomStrip = custom ~= nil
+
+    -- 1. Custom strip card in card mode
+    if isCustomStrip and self.mode == "card" then
       self.iconTimer = ((self.iconTimer or 0) + 1) % 32
-      local input = self.game and self.game.input
-      if not input then return end
       local busy = false
-      if type(entry.busy) == "function" then
-        local ok, out = pcall(entry.busy, self)
+      if type(custom.busy) == "function" then
+        local ok, out = pcall(custom.busy, self)
         busy = ok and out and true or false
       end
       if not busy and input:wasPressed("b") then
         self.mode = "strip"
-        if type(entry.onLeave) == "function" then pcall(entry.onLeave, self) end
-        fireTrigger(entry, self, "leave")
+        if type(custom.onLeave) == "function" then pcall(custom.onLeave, self) end
+        fireTrigger(custom, self, "leave")
         return
       end
-      if type(entry.update) == "function" then
-        local ok, err = pcall(entry.update, self, input, dt)
-        if not ok then warn("update(%s) error: %s", entry.id, tostring(err)) end
+      if type(custom.update) == "function" then
+        local ok, err = pcall(custom.update, self, input, dt)
+        if not ok then warn("update(%s) error: %s", custom.id, tostring(err)) end
       end
       return
     end
-    -- Custom card unregistered while focused: drop to strip (do not land on
-    -- whatever vanilla card refreshCards selected as a fallback).
+
+    -- Custom card unregistered while focused: drop to strip
     if self.mode == "card" and priorWasCustom and not customById[priorId] then
       self.mode = "strip"
     end
-    if entry and self.mode == "strip" and type(entry.onHighlight) == "function" then
-      pcall(entry.onHighlight, self)
-    end
-    local before = self.mode
-    local result = origUpdate(self, dt)
-    if before == "strip" and self.mode == "card" then
-      local entered = customFor(self)
-      if entered then
-        if type(entered.onEnter) == "function" then pcall(entered.onEnter, self) end
-        fireTrigger(entered, self, "enter")
+
+    -- 2. Strip mode navigation across ANY card
+    if self.mode == "strip" then
+      if isCustomStrip and type(custom.onHighlight) == "function" then
+        pcall(custom.onHighlight, self)
       end
+      if input:wasPressed("left") then
+        stepCard(self, -1)
+        return
+      elseif input:wasPressed("right") then
+        stepCard(self, 1)
+        return
+      elseif input:wasPressed("a") then
+        self.mode = "card"
+        if isCustomStrip then
+          if type(custom.onEnter) == "function" then pcall(custom.onEnter, self) end
+          fireTrigger(custom, self, "enter")
+        elseif cardId == "radio" then
+          self:ensureTuned()
+        end
+        return
+      elseif input:wasPressed("b") then
+        if self.onClose then self.onClose() end
+        return
+      end
+      return
     end
-    return result
+
+    -- 3. Card mode on vanilla host cards (bidirectional navigation + host loops)
+    if cardId == "phone" then
+      local phoneBusy = (self.call ~= nil or self.phoneSubmenu ~= nil)
+      if not phoneBusy then
+        if input:wasPressed("left") then
+          stepCard(self, -1)
+          return
+        elseif input:wasPressed("right") then
+          stepCard(self, 1)
+          return
+        elseif input:wasPressed("b") then
+          if self.onClose then self.onClose() end
+          return
+        end
+      end
+      self:updatePhone(input)
+      return
+    elseif cardId == "radio" then
+      if input:wasPressed("left") then
+        stepCard(self, -1)
+        return
+      elseif input:wasPressed("right") then
+        stepCard(self, 1)
+        return
+      elseif input:wasPressed("b") then
+        self.mode = "strip"
+        self:stopRadio()
+        return
+      end
+      self:ensureTuned()
+      if input:wasPressed("up") then
+        local stations = self.stations and self:stations() or {}
+        if self.station < #stations then
+          self.station = self.station + 1
+          self:tuneRadio()
+        end
+      elseif input:wasPressed("down") then
+        if self.station > 1 then
+          self.station = self.station - 1
+          self:tuneRadio()
+        end
+      end
+      self:tickRadio()
+      return
+    elseif cardId == "map" then
+      if input:wasPressed("left") then
+        stepCard(self, -1)
+        return
+      elseif input:wasPressed("right") then
+        stepCard(self, 1)
+        return
+      elseif input:wasPressed("b") then
+        self.mode = "strip"
+        return
+      end
+      self:moveMapCursor(input)
+      return
+    elseif cardId == "clock" then
+      if input:wasPressed("left") then
+        stepCard(self, -1)
+        return
+      elseif input:wasPressed("right") then
+        stepCard(self, 1)
+        return
+      elseif input:wasPressed("b") then
+        self.mode = "strip"
+        return
+      end
+      return
+    end
   end
 
   -- ----- append-only overlays on vanilla cards ------------------------------
